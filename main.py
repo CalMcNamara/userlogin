@@ -1,7 +1,21 @@
 import sqlite3
 from sqlite3 import Error
-
+from passlib.context import CryptContext
 import getpass
+
+pwd_context = CryptContext(
+        schemes=["pbkdf2_sha256"],
+        default="pbkdf2_sha256",
+        pbkdf2_sha256__default_rounds=30000
+)
+
+def encrypt_password(password):
+    return pwd_context.encrypt(password)
+
+
+def check_encrypted_password(password, hashed):
+    return pwd_context.verify(password, hashed)
+
 
 def display_menu():
     status = input("Do you have an account? Y / N ")
@@ -37,7 +51,7 @@ def check_password(username, password):
     password_db = ''
     for row in rows:
         password_db = row
-    if(str(password) == str(password_db)):
+    if(check_encrypted_password(password,password_db) == True):
         print("Yes")
     else:
         print("password: " + str(password) + " passworddb: " + str(password_db))
@@ -82,6 +96,7 @@ def add_user(username, password):
     database = 'userlogin.db'
     conn = create_connection(database)
     cur = conn.cursor()
+    password = encrypt_password(password)
     sql = '''INSERT INTO userlogin (username,password)VALUES(?,?)'''
     data = (username,password)
     cur.execute(sql,data)
